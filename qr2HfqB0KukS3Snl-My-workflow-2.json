@@ -1,0 +1,205 @@
+{
+  "name": "My workflow 2",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "upload",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        -600,
+        -800
+      ],
+      "id": "f93c47cc-6aec-48d5-8a64-0493b8ba9cf2",
+      "webhookId": "4d0200b2-350f-4eb4-b168-433f7db27a18"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.1,
+      "position": [
+        940,
+        -680
+      ],
+      "id": "6724bec7-e340-405f-8f7e-56893547b4b2",
+      "name": "Merge"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json[\"email\"] }}",
+        "subject": "Your Document Analysis Result",
+        "emailType": "text",
+        "message": "={{ $json[\"message\"] }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        1700,
+        -600
+      ],
+      "id": "150f426e-73d5-44e7-92a6-abac192c78cf",
+      "name": "Gmail1",
+      "webhookId": "de79c7d5-9a39-4dbb-a547-ad4b0837e6e5",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "VtFwnTAUkNxJ5jOf",
+          "name": "Gmail account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const email = $node[\"Webhook\"].json[\"body\"][\"email\"];\nconst message = $json[\"text\"];\n\nreturn [\n  {\n    json: {\n      email,\n      message\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1340,
+        -620
+      ],
+      "id": "090e1c14-b05e-4dcd-bdd2-52acdd375e54",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI legal assistant specialized in Indian laws.\n\nAnalyze the following legal document text:\n{{ $json[\"text\"] }}\n\nPerform the following tasks:\n1. Identify and classify the type of document (e.g., Employment Contract, Rental Agreement, Nomination Form, etc.).\n2. Check if there are any potential violations of Indian Penal Code (IPC) based on the content. If none are found, say \"No IPC violation detected.\"\n3. Summarize the legal content in simple and clear language.\n4. Provide legal recommendations tailored to the user, suggesting any necessary actions, rights, or cautions based on Indian law.\n\nMake your response easy to understand for someone without legal background.",
+        "hasOutputParser": true
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.6,
+      "position": [
+        540,
+        -980
+      ],
+      "id": "b203580b-2a21-42d4-bdab-9fa8ba462e0f",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "file",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        -20,
+        -980
+      ],
+      "id": "361acd97-055b-46f5-b71f-978926f355e3",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-1.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        460,
+        -800
+      ],
+      "id": "ce1cf0b9-9419-4cf6-bb42-8d159ba98b22",
+      "name": "Google Gemini Chat Model",
+      "credentials": {
+        "googlePalmApi": {
+          "id": "if3xaMioEsJPiRS4",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 1
+          },
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Gmail1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Merge",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v0",
+    "saveExecutionProgress": true,
+    "callerPolicy": "workflowsFromSameOwner",
+    "errorWorkflow": "qr2HfqB0KukS3Snl"
+  },
+  "staticData": null,
+  "pinData": {},
+  "triggerCount": 1,
+  "meta": {
+    "templateCredsSetupCompleted": true
+  }
+}
